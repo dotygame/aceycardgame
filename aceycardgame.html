@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Acey Card Game</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+    
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    /* Global Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #242424; /* Darker background for better contrast */
+      color: #f0f0f0; /* Lighter text color for readability */
+      line-height: 1.5; /* Slightly reduced line height for cleaner look */
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh; /* Ensure body takes full viewport height */
+    }
+    /* Centered container with a polished look */
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 80px; /* Reduced top margin */
+      padding: 30px; /* Increased padding for better spacing */
+      background: #333; /* Slightly lighter container background */
+      border-radius: 12px; /* More rounded corners */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Enhanced shadow */
+      display: flex;
+      flex-direction: column;
+      align-items: stretch; /* Stretch items to container width */
+    }
+    h1, h2, h3 {
+      margin: 20px 0 10px 0; /* Adjusted heading margins */
+      font-weight: 500; /* Slightly lighter font weight */
+      color: #fff; /* White headings for prominence */
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.2rem; /* Slightly larger title */
+      color: #ffdd57; /* Gold accent color for title */
+      margin-bottom: 25px;
+    }
+    /* Start Screen */
+    #startScreen {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    #playButton {
+      padding: 16px 36px; /* Larger button padding */
+      font-size: 1.2rem;
+      background: #ffdd57; /* Gold button background */
+      color: #242424; /* Dark text on button */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease; /* Smooth transition */
+      font-weight: 600; /* Slightly bolder button text */
+    }
+    #playButton:hover {
+      background-color: #ffea8a; /* Lighter gold on hover */
+    }
+    /* Connection Selection */
+    #connectionSelection {
+      display: none;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin: 8px;
+      background: #f0f0f0; /* Light gray buttons */
+      color: #333; /* Dark text on buttons */
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-weight: 500;
+    }
+    .btn:hover {
+      background-color: #e0e0e0; /* Lighter gray on hover */
+    }
+    /* Host & Join Options */
+    #hostDisplay,
+    #joinDisplay {
+      display: none;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    #joinDisplay input[type="text"] {
+      padding: 12px;
+      width: 80%; /* Increased width for input */
+      max-width: 400px;
+      border: 1px solid #777; /* Muted border color */
+      border-radius: 6px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      background: #444; /* Dark input background */
+      color: #f0f0f0;
+    }
+    /* Game Area */
+    #gameArea {
+      display: none;
+      flex-direction: column;
+      align-items: center; /* Center game elements */
+    }
+    #status {
+      font-size: 1.2rem;
+      text-align: center;
+      margin: 15px 0;
+      color: #fff; /* White status text */
+    }
+    #playedCards {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      margin: 30px 0;
+      flex-wrap: wrap;
+    }
+    .card {
+      width: 90px; /* Slightly larger cards */
+      height: 135px;
+      background: #fff; /* White playing cards */
+      border: 1px solid #aaa; /* Light gray card border */
+      border-radius: 10px; /* More rounded card corners */
+      position: relative;
+      user-select: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); /* Subtler card shadow */
+    }
+    .card .corner {
+      position: absolute;
+      font-size: 0.9rem;
+    }
+    .top-left {
+      top: 6px;
+      left: 6px;
+    }
+    .top-right {
+      top: 6px;
+      right: 6px;
+    }
+    .bottom-left {
+      bottom: 6px;
+      left: 6px;
+    }
+    .bottom-right {
+      bottom: 6px;
+      right: 6px;
+    }
+    .card .center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.7rem; /* Larger suit/rank text */
+      font-weight: 500;
+    }
+    #hand {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 30px;
+    }
+    #pastRounds {
+      text-align: center;
+      margin: 20px 0;
+      color: #ddd; /* Lighter text for past rounds */
+    }
+    .pastCard {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 45px; /* Slightly larger past cards */
+      height: 68px;
+      background: #fff;
+      border: 1px solid #bbb; /* Light gray border for past cards */
+      border-radius: 5px;
+      margin: 0 3px;
+      font-size: 0.9rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Very subtle shadow */
+    }
+    #logBox {
+      background: #444; /* Darker log box background */
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 30px;
+      height: 180px; /* Increased log box height */
+      overflow-y: auto;
+      font-size: 0.95rem;
+      color: #e0e0e0;
+      border: 1px solid #555; /* Add border to log box */
+    }
+    /* Instructions – Always Visible */
+    #instructions {
+      background: #333;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 30px;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #f0f0f0;
+      border: 1px solid #555; /* Add border to instructions */
+    }
+    #instructions h3 {
+      color: #fff; /* White instruction headings */
+    }
+
+    /* Responsive adjustments for mobile */
+    @media (max-width: 768px) { /* Adjust breakpoint for tablets and phones */
+      body {
+        padding: 10px; /* Reduce body padding on mobile */
+      }
+      .container {
+        margin-top: 40px; /* Reduce container top margin on mobile */
+        padding: 20px; /* Reduce container padding on mobile */
+        border-radius: 10px;
+      }
+      h1 {
+        font-size: 1.8rem; /* Smaller title on mobile */
+        margin-bottom: 20px;
+      }
+      #playButton,
+      .btn {
+        padding: 12px 28px; /* Adjust button padding on mobile */
+        font-size: 1.1rem;
+      }
+      .card {
+        width: 75px; /* Smaller cards on mobile */
+        height: 112px;
+      }
+      #hand {
+        gap: 8px; /* Reduce hand card gap on mobile */
+        margin-top: 20px;
+      }
+      #playedCards {
+        gap: 15px; /* Reduce played cards gap on mobile */
+        margin: 20px 0;
+      }
+      .pastCard {
+        width: 35px; /* Smaller past cards on mobile */
+        height: 53px;
+        font-size: 0.8rem;
+      }
+      #logBox {
+        height: 150px; /* Adjust log box height on mobile */
+        margin-top: 20px;
+      }
+      #instructions {
+        padding: 15px; /* Reduce instructions padding on mobile */
+        margin-top: 20px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Acey Card Game</h1>
+    <div id="startScreen">
+      <button id="playButton">Play</button>
+    </div>
+    <div id="connectionSelection">
+      <button class="btn" onclick="chooseHost()">Host Game</button>
+      <button class="btn" onclick="chooseJoin()">Join Game</button>
+    </div>
+    <div id="hostDisplay">
+      <p><strong>Your Peer ID:</strong> <span id="peerIdDisplay"></span></p>
+      <p>Share this code with your friend to connect.</p>
+    </div>
+    <div id="joinDisplay">
+      <p>Enter the code your friend shared with you:</p>
+      <input type="text" id="hostIdInput" placeholder="Enter host Peer ID" />
+      <button class="btn" onclick="joinGame()">Join</button>
+    </div>
+    <div id="gameArea">
+      <h2 id="status">Waiting for connection...</h2>
+      <div id="playedCards">
+        <div id="leaderCardDisplay" class="card" style="display:none;"></div>
+        <div id="followerCardDisplay" class="card" style="display:none;"></div>
+      </div>
+      <h2>Your Hand</h2>
+      <div id="hand"></div>
+      <h3>Last Round</h3>
+      <div id="pastRounds"></div>
+      <h3>Game Log</h3>
+      <div id="logBox"></div>
+    </div>
+    <div id="instructions">
+      <h3>How to Play</h3>
+      <p>
+        In each round one player leads by playing a card. The other must follow suit if possible.
+      </p>
+      <p>
+        <strong>Normal Round:</strong> If the follower plays a card matching the led suit, the higher card loses. The loser becomes the leader for the next round.
+      </p>
+      <p>
+        <strong>Cut Round:</strong> If the follower does not follow suit, it’s a cut round and the leader loses automatically (taking both played cards).
+      </p>
+      <p>
+        After each round, both players draw a card (if available). The first player to finish all their cards wins.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * PeerJS Setup with TURN Fallback
+     ***********************/
+    let usingTurn = false;     // Flag indicating whether to use TURN credentials.
+    let turnIceServers = null; // Will hold the TURN ICE server array when fetched.
+    let peer;           // Global Peer instance.
+
+    // Function to initialize the Peer instance.
+    function initializePeer(callback) {
+      if (usingTurn) {
+        if (turnIceServers) {
+          peer = new Peer(null, { config: { iceServers: turnIceServers } });
+          callback(peer);
+        } else {
+          fetch("https://turnserveracey.onrender.com/turn")
+            .then(response => response.json())
+            .then(data => {
+              let fetchedIce = data.iceServers;
+              let iceArray = Array.isArray(fetchedIce) ? fetchedIce : [fetchedIce];
+              turnIceServers = [
+                { urls: "stun:stun.cloudflare.com:3478" },
+                ...iceArray
+              ];
+              peer = new Peer(null, { config: { iceServers: turnIceServers } });
+              callback(peer);
+            })
+            .catch(err => {
+              console.error("Error fetching TURN credentials", err);
+              peer = new Peer(null, { config: { iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] } });
+              callback(peer);
+            });
+        }
+      } else {
+        peer = new Peer(null, { config: { iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] } });
+        callback(peer);
+      }
+    }
+
+    // Initially, create the Peer instance with STUN only.
+    initializePeer(function(p) {
+      peer = p;
+      peer.on("open", id => {
+        document.getElementById("peerIdDisplay").innerText = id;
+      });
+      peer.on("error", err => {
+        console.error(err);
+      });
+    });
+
+    /***********************
+     * Helper Functions: Dialog & UI Reset
+     ***********************/
+    function showDialog(message, callback) {
+      alert(message);
+      if (callback) callback();
+    }
+
+    // Reset UI to the starting stage.
+    function resetToInitialUI() {
+      document.getElementById("gameArea").style.display = "none";
+      document.getElementById("hostDisplay").style.display = "none";
+      document.getElementById("joinDisplay").style.display = "none";
+      document.getElementById("startScreen").style.display = "block";
+      document.getElementById("connectionSelection").style.display = "block";
+      resetGame();
+    }
+
+    /***********************
+     * Global Variables & Game State
+     ***********************/
+    let myIdentity = null; // "host" or "client"
+    let myTurn = false;
+    let cardPlayedThisRound = false;
+    let gameLog = "";
+
+    let gameState = {
+      deck: [],
+      hands: { host: [], client: [] },
+      played: [null, null],
+      roundSuit: null,
+      firstPlayer: null,
+      turn: null,
+      phase: "playing",
+      pastRounds: [],
+      gameOver: false,
+      winner: null
+    };
+
+    /***********************
+     * Connection & UI Setup
+     ***********************/
+    let conn = null;
+    function setupDisconnectionHandler() {
+      conn.on("close", () => {
+        showDialog("Opponent disconnected. Returning to starting stage.", resetToInitialUI);
+      });
+    }
+
+    document.getElementById("playButton").addEventListener("click", function () {
+      document.getElementById("startScreen").style.display = "none";
+      document.getElementById("connectionSelection").style.display = "block";
+      show_8994524({
+        type: 'inApp',
+        inAppSettings: {
+          frequency: 1,
+          capping: 0.000555556,
+          interval: 30,
+          timeout: 5,
+          everyPage: false
+        }
+      });
+    });
+
+    function chooseHost() {
+      document.getElementById("connectionSelection").style.display = "none";
+      document.getElementById("hostDisplay").style.display = "block";
+      hostGame();
+    }
+
+    function chooseJoin() {
+      document.getElementById("connectionSelection").style.display = "none";
+      document.getElementById("joinDisplay").style.display = "block";
+    }
+
+    function hostGame() {
+      myIdentity = "host";
+      peer.on("connection", connection => {
+        conn = connection;
+        setupConnection();
+        setupDisconnectionHandler();
+      });
+      appendLog("Waiting for opponent to join...");
+    }
+
+    function joinGame() {
+      myIdentity = "client";
+      const hostId = document.getElementById("hostIdInput").value.trim();
+      if (!hostId) {
+        alert("Enter a valid host Peer ID.");
+        return;
+      }
+      conn = peer.connect(hostId);
+      setupConnection();
+      setupDisconnectionHandler();
+      setTimeout(function() {
+        if (!conn || !conn.open) {
+          console.log("Direct connection failed. Retrying with TURN...");
+          usingTurn = true;
+          initializePeer(function(newPeer) {
+            peer = newPeer;
+            conn = peer.connect(hostId);
+            setupConnection();
+            setupDisconnectionHandler();
+          });
+        }
+      }, 10000);
+    }
+
+    function setupConnection() {
+      conn.on("open", () => {
+        document.getElementById("hostDisplay").style.display = "none";
+        document.getElementById("joinDisplay").style.display = "none";
+        document.getElementById("gameArea").style.display = "block";
+        if (myIdentity === "host") {
+          appendLog("You are the host.");
+          initializeGame();
+        } else {
+          appendLog("You joined the game. Waiting for game start...");
+        }
+      });
+      conn.on("data", data => {
+        handleMessage(data);
+      });
+    }
+
+    /***********************
+     * Host Game Functions
+     ***********************/
+    function initializeGame() {
+      gameState.deck = createDeck();
+      gameState.hands.host = gameState.deck.splice(0, 8);
+      gameState.hands.client = gameState.deck.splice(0, 8);
+      gameState.played = [null, null];
+      gameState.roundSuit = null;
+      gameState.phase = "playing";
+      gameState.firstPlayer = Math.random() < 0.5 ? "host" : "client";
+      gameState.turn = gameState.firstPlayer;
+      gameState.pastRounds = [];
+      gameState.gameOver = false;
+      gameState.winner = null;
+      myTurn = gameState.turn === myIdentity;
+      cardPlayedThisRound = false;
+      appendLog("Game started. " + (myTurn ? "Your turn." : "Opponent's turn."));
+      sendStateUpdate("init");
+      updateAllUI();
+    }
+
+    function createDeck() {
+      const suits = ["♥", "♦", "♣", "♠"];
+      const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+      let deck = [];
+      for (let s of suits) {
+        for (let r of ranks) {
+          deck.push({ suit: s, rank: r, value: ranks.indexOf(r) + 2 });
+        }
+      }
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    /***********************
+     * UI Update Functions
+     ***********************/
+    function updateStatusUI() {
+      if (gameState.gameOver) {
+        document.getElementById("status").innerText =
+          "Game Over: " + gameState.winner + " wins!";
+      } else {
+        document.getElementById("status").innerText =
+          myTurn ? "Your turn." : "Waiting for opponent...";
+      }
+    }
+
+    function updateHandUI() {
+      let handDiv = document.getElementById("hand");
+      handDiv.innerHTML = "";
+      let hand = myIdentity === "host" ? gameState.hands.host : gameState.hands.client;
+      hand.forEach((card, index) => {
+        let el = createCardElement(card);
+        el.onclick = () => {
+          if (!gameState.gameOver && myTurn && !cardPlayedThisRound)
+            playCard(index);
+        };
+        handDiv.appendChild(el);
+      });
+    }
+
+    function createCardElement(card) {
+      let el = document.createElement("div");
+      el.className = "card";
+      el.style.color = (card.suit === "♥" || card.suit === "♦") ? "red" : "black";
+      el.innerHTML = `
+        <div class="corner top-left">${card.suit}</div>
+        <div class="corner top-right">${card.suit}</div>
+        <div class="corner bottom-left">${card.suit}</div>
+        <div class="corner bottom-right">${card.suit}</div>
+        <div class="center">${card.rank}</div>
+      `;
+      return el;
+    }
+
+    function displayPlayedCard(elementId, card) {
+      let container = document.getElementById(elementId);
+      let cardEl = createCardElement(card);
+      container.innerHTML = cardEl.innerHTML;
+      container.style.color = cardEl.style.color;
+      container.style.display = "block";
+    }
+
+    function updatePlayedCards() {
+      if (gameState.played[0]) {
+        displayPlayedCard("leaderCardDisplay", gameState.played[0].card);
+      } else {
+        document.getElementById("leaderCardDisplay").style.display = "none";
+      }
+      if (gameState.played[1]) {
+        displayPlayedCard("followerCardDisplay", gameState.played[1].card);
+      } else {
+        document.getElementById("followerCardDisplay").style.display = "none";
+      }
+    }
+
+    function updatePastRoundsUI() {
+      let pastDiv = document.getElementById("pastRounds");
+      pastDiv.innerHTML = "";
+      if (gameState.pastRounds.length > 0) {
+        let lastRound = gameState.pastRounds[gameState.pastRounds.length - 1];
+        let container = document.createElement("div");
+        container.style.display = "flex";
+        container.style.gap = "5px";
+        container.appendChild(createSmallCardElement(lastRound.card1));
+        container.appendChild(createSmallCardElement(lastRound.card2));
+        pastDiv.appendChild(container);
+      }
+    }
+
+    function createSmallCardElement(card) {
+      let el = document.createElement("div");
+      el.className = "pastCard";
+      el.style.color = (card.suit === "♥" || card.suit === "♦") ? "red" : "black";
+      el.innerText = card.rank + card.suit;
+      return el;
+    }
+
+    function updateLogUI(logText) {
+      document.getElementById("logBox").innerHTML = logText;
+    }
+
+    function updateAllUI() {
+      updateHandUI();
+      updatePlayedCards();
+      updatePastRoundsUI();
+      updateStatusUI();
+      updateLogUI(gameLog);
+      cardPlayedThisRound = false;
+    }
+
+    function appendLog(message) {
+      let timestamp = new Date().toLocaleTimeString();
+      gameLog += `[${timestamp}] ${message}<br>`;
+      updateLogUI(gameLog);
+    }
+
+    /***********************
+     * Game Logic & Input Handling
+     ***********************/
+    function playCard(index) {
+      if (gameState.gameOver) {
+        alert("The game is over!");
+        return;
+      }
+      if (!myTurn) {
+        alert("Not your turn!");
+        return;
+      }
+      if (cardPlayedThisRound) return;
+      if (myIdentity === "client") {
+        if (gameState.played[0] !== null && gameState.roundSuit) {
+          let clientHand = gameState.hands.client;
+          let hasFollowing = clientHand.some(card => card.suit === gameState.roundSuit);
+          let selectedCard = clientHand[index];
+          if (hasFollowing && selectedCard.suit !== gameState.roundSuit) {
+            alert("You must follow suit!");
+            updateHandUI();
+            return;
+          }
+        }
+        conn.send({ type: "playCard", cardIndex: index });
+        cardPlayedThisRound = true;
+      } else {
+        hostPlayCard(index);
+      }
+    }
+
+    function hostPlayCard(cardIndex) {
+      if (gameState.gameOver) {
+        alert("The game is over!");
+        return;
+      }
+      if (!myTurn) {
+        alert("Not your turn!");
+        return;
+      }
+      if (cardPlayedThisRound) return;
+      cardPlayedThisRound = true;
+      processPlayCard("host", cardIndex);
+    }
+
+    function processPlayCard(player, cardIndex) {
+      if (!gameState.played[0]) {
+        let hand = gameState.hands[player];
+        if (cardIndex < 0 || cardIndex >= hand.length) return;
+        let card = hand.splice(cardIndex, 1)[0];
+        gameState.played[0] = { card: card, player: player };
+        gameState.roundSuit = card.suit;
+        updatePlayedCards();
+        gameState.turn = player === "host" ? "client" : "host";
+        myTurn = gameState.turn === myIdentity;
+        updateHandUI();
+        updateStatusUI();
+        sendStateUpdate("stateUpdate");
+      } else if (!gameState.played[1]) {
+        let hand = gameState.hands[player];
+        if (cardIndex < 0 || cardIndex >= hand.length) return;
+        let matchingCards = hand.filter(c => c.suit === gameState.roundSuit);
+        let hasSuit = matchingCards.length > 0;
+        let selectedCard = hand[cardIndex];
+        if (hasSuit && selectedCard.suit !== gameState.roundSuit) {
+          alert("You must follow suit!");
+          cardPlayedThisRound = false;
+          updateHandUI();
+          return;
+        }
+        let card = hand.splice(cardIndex, 1)[0];
+        gameState.played[1] = { card: card, player: player };
+        updatePlayedCards();
+        gameState.phase = "resolving";
+        evaluateRound();
+        return;
+      }
+    }
+
+    function evaluateRound() {
+      let p0 = gameState.played[0].card;
+      let p1 = gameState.played[1].card;
+      let roundType = (p1.suit === gameState.roundSuit) ? "normal" : "cut";
+      let loser = null;
+      if (roundType === "normal") {
+        loser = (p0.value > p1.value) ? gameState.played[0].player : gameState.played[1].player;
+      } else {
+        loser = gameState.played[0].player;
+      }
+      appendLog(
+        `Round: ${gameState.played[0].player} played ${p0.rank}${p0.suit} vs ${gameState.played[1].player} played ${p1.rank}${p1.suit}. Type: ${roundType}. Loser: ${loser}.`
+      );
+      if (roundType === "cut") {
+        gameState.hands[loser].push(p0);
+        gameState.hands[loser].push(p1);
+      }
+      gameState.firstPlayer = loser;
+      gameState.turn = loser;
+      if (gameState.deck.length > 0) {
+        gameState.hands.host.push(gameState.deck.shift());
+      }
+      if (gameState.deck.length > 0) {
+        gameState.hands.client.push(gameState.deck.shift());
+      }
+      if (roundType === "normal") {
+        gameState.pastRounds.push({ card1: p0, card2: p1 });
+      }
+      gameState.played = [null, null];
+      gameState.roundSuit = null;
+      gameState.phase = "playing";
+      myTurn = gameState.turn === myIdentity;
+      cardPlayedThisRound = false;
+      if (gameState.hands.host.length === 0) {
+        gameState.gameOver = true;
+        gameState.winner = "host";
+        appendLog("Game Over: host wins!");
+        showDialog("Game Over: host wins! Starting a new game...", initializeGame);
+        return;
+      } else if (gameState.hands.client.length === 0) {
+        gameState.gameOver = true;
+        gameState.winner = "client";
+        appendLog("Game Over: client wins!");
+        showDialog("Game Over: client wins! Starting a new game...", initializeGame);
+        return;
+      }
+      updateAllUI();
+      sendStateUpdate("stateUpdate");
+    }
+
+    function sendStateUpdate(type) {
+      if (myIdentity === "host" && conn && conn.open) {
+        conn.send({ type: type, state: gameState, log: gameLog });
+      }
+    }
+
+    /***********************
+     * Message Handling
+     ***********************/
+    function handleMessage(data) {
+      if (data.type === "init") {
+        gameState = data.state;
+        gameLog = data.log;
+        myTurn = (gameState.turn === myIdentity);
+        updateAllUI();
+        appendLog("Game started. " + (myTurn ? "Your turn." : "Opponent's turn."));
+      } else if (data.type === "stateUpdate") {
+        gameState = data.state;
+        gameLog = data.log;
+        myTurn = (gameState.turn === myIdentity);
+        cardPlayedThisRound = false;
+        updateAllUI();
+      } else if (data.type === "playCard") {
+        if (myIdentity === "host") {
+          processPlayCard("client", data.cardIndex);
+        }
+      } else if (data.type === "error") {
+        alert(data.message);
+      }
+    }
+
+    /***********************
+     * Reset Game / UI
+     ***********************/
+    function resetGame() {
+      gameState = {
+        deck: [],
+        hands: { host: [], client: [] },
+        played: [null, null],
+        roundSuit: null,
+        firstPlayer: null,
+        turn: null,
+        phase: "playing",
+        pastRounds: [],
+        gameOver: false,
+        winner: null
+      };
+      myTurn = false;
+      cardPlayedThisRound = false;
+      gameLog = "";
+      updateLogUI(gameLog);
+      appendLog("Game reset.");
+    }
+  </script>
+</body>
+</html>
