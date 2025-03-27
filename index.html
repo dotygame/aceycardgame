@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>URL Shortener - AceyCard</title>
+  <title>AceyCard URL Shortener</title>
   <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
   <style>
     body {
@@ -56,7 +56,7 @@
   </style>
 </head>
 <body>
-  <div class="card">
+  <div id="shortener" class="card">
     <h2>AceyCard URL Shortener</h2>
     <input type="text" id="longUrl" placeholder="Enter your URL">
     <button id="shortenBtn">Shorten</button>
@@ -103,7 +103,7 @@
       let path = window.location.pathname.substring(1); // Get short code from path
       console.log("Checking for short code:", path);
 
-      if (path && path !== "url.html") { // Only process if not url.html
+      if (path) { // If path exists, it's a short link
         gun.get("toto_shortcode").get(path).once(data => {
           console.log("Retrieved data from GunDB:", data);
           if (data) {
@@ -112,6 +112,8 @@
             document.body.innerHTML = "<h2>Invalid short URL</h2>";
           }
         });
+      } else {
+        document.getElementById("shortener").style.display = "block"; // Show shortener UI
       }
     }
 
