@@ -64,7 +64,7 @@
   </div>
 
   <script>
-    // Initialize GunDB with a peer relay
+    // Initialize GunDB
     const gun = Gun('https://gun-manhattan.herokuapp.com/gun');
     console.log("GunDB initialized");
 
@@ -83,45 +83,42 @@
         return;
       }
 
-      let shortCode = generateShortCode(); // Generate a short code
+      let shortCode = generateShortCode();
       console.log("Generated short code:", shortCode);
 
-      // Store the long URL in GunDB under "toto_shortcode"
+      // Store the long URL in GunDB
       gun.get("toto_urls").get(shortCode).put(longUrl, () => {
         console.log("URL stored in GunDB:", longUrl);
 
-        // Display the shortened URL
-        let shortUrl = `https://aceycard.fun/${shortCode}`;
+        // Generate and display the short URL (adjust based on your GitHub Pages URL)
+        let shortUrl = `http://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/#${shortCode}`;
         output.innerHTML = `Short URL: <a href="${shortUrl}" target="_blank">${shortUrl}</a>`;
         output.style.display = "block";
         console.log("Short URL displayed:", shortUrl);
       });
     }
 
-    // Function to resolve a short URL and redirect
+    // Function to resolve short URL and redirect
     function resolveUrl() {
-      let path = window.location.pathname.substring(1); // Get the short code from the URL
-      console.log("Initial path:", path);
+      let shortCode = window.location.hash.substring(1); // Get short code after #
+      console.log("Checking for short code:", shortCode);
 
-      // Ignore "url.html" to prevent conflicts
-      if (path === "url.html" || path === "") return;
-
-      console.log("Resolving short code:", path);
-
-      gun.get("toto_urls").get(path).once(data => {
-        console.log("Retrieved data from GunDB:", data);
-        if (data) {
-          window.location.href = data; // Redirect to the original URL
-        } else {
-          document.body.innerHTML = "<h2>Invalid short URL</h2>";
-        }
-      });
+      if (shortCode) {
+        gun.get("toto_urls").get(shortCode).once(data => {
+          console.log("Retrieved data from GunDB:", data);
+          if (data) {
+            window.location.href = data; // Redirect to original URL
+          } else {
+            document.body.innerHTML = "<h2>Invalid short URL</h2>";
+          }
+        });
+      }
     }
 
-    // Attach event listener to the shorten button
+    // Attach event listener
     document.getElementById("shortenBtn").addEventListener("click", shortenUrl);
 
-    // On page load, try to resolve a short code if present in the URL
+    // Resolve URL if hash exists
     document.addEventListener("DOMContentLoaded", resolveUrl);
   </script>
 </body>
