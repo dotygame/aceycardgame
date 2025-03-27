@@ -86,12 +86,12 @@
       let shortCode = generateShortCode(); // Generate a short code
       console.log("Generated short code:", shortCode);
 
-      // Store the long URL in GunDB with key "toto_shortcode"
+      // Store the long URL in GunDB under "toto_shortcode"
       gun.get("toto_urls").get(shortCode).put(longUrl, () => {
         console.log("URL stored in GunDB:", longUrl);
 
         // Display the shortened URL
-        let shortUrl = `${window.location.origin}/${shortCode}`;
+        let shortUrl = `https://aceycard.fun/${shortCode}`;
         output.innerHTML = `Short URL: <a href="${shortUrl}" target="_blank">${shortUrl}</a>`;
         output.style.display = "block";
         console.log("Short URL displayed:", shortUrl);
@@ -101,7 +101,11 @@
     // Function to resolve a short URL and redirect
     function resolveUrl() {
       let path = window.location.pathname.substring(1); // Get the short code from the URL
-      if (!path) return;
+      console.log("Initial path:", path);
+
+      // Ignore "url.html" to prevent conflicts
+      if (path === "url.html" || path === "") return;
+
       console.log("Resolving short code:", path);
 
       gun.get("toto_urls").get(path).once(data => {
