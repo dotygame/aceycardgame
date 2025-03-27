@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Decentralized URL Shortener (GunDB)</title>
+  <title>URL Shortener - AceyCard</title>
   <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
   <style>
     body {
@@ -57,7 +57,7 @@
 </head>
 <body>
   <div class="card">
-    <h2>Decentralized URL Shortener</h2>
+    <h2>AceyCard URL Shortener</h2>
     <input type="text" id="longUrl" placeholder="Enter your URL">
     <button id="shortenBtn">Shorten</button>
     <p id="shortenedUrl"></p>
@@ -87,11 +87,11 @@
       console.log("Generated short code:", shortCode);
 
       // Store the long URL in GunDB
-      gun.get("toto_urls").get(shortCode).put(longUrl, () => {
+      gun.get("toto_shortcode").get(shortCode).put(longUrl, () => {
         console.log("URL stored in GunDB:", longUrl);
 
-        // Generate and display the short URL (adjust based on your GitHub Pages URL)
-        let shortUrl = `https://aceycard.fun/#${shortCode}`;
+        // Generate and display the short URL
+        let shortUrl = `http://aceycard.fun/${shortCode}`;
         output.innerHTML = `Short URL: <a href="${shortUrl}" target="_blank">${shortUrl}</a>`;
         output.style.display = "block";
         console.log("Short URL displayed:", shortUrl);
@@ -100,11 +100,11 @@
 
     // Function to resolve short URL and redirect
     function resolveUrl() {
-      let shortCode = window.location.hash.substring(1); // Get short code after #
-      console.log("Checking for short code:", shortCode);
+      let path = window.location.pathname.substring(1); // Get short code from path
+      console.log("Checking for short code:", path);
 
-      if (shortCode) {
-        gun.get("toto_urls").get(shortCode).once(data => {
+      if (path && path !== "url.html") { // Only process if not url.html
+        gun.get("toto_shortcode").get(path).once(data => {
           console.log("Retrieved data from GunDB:", data);
           if (data) {
             window.location.href = data; // Redirect to original URL
@@ -118,7 +118,7 @@
     // Attach event listener
     document.getElementById("shortenBtn").addEventListener("click", shortenUrl);
 
-    // Resolve URL if hash exists
+    // Resolve URL if short code is entered
     document.addEventListener("DOMContentLoaded", resolveUrl);
   </script>
 </body>
