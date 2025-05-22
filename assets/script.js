@@ -2,12 +2,28 @@
 const CLIENT_ID = '851123776808-4nt2gsfre2i2s4jc34ilnrl46hvhlgmo.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-// Initialize Google API client
 function initClient() {
-  gapi.load('client:auth2', () => {
-    gapi.auth2.init({ client_id: CLIENT_ID });
+  gapi.load('client:auth2', async () => {
+    await gapi.auth2.init({ client_id: CLIENT_ID });
+
+    const authInstance = gapi.auth2.getAuthInstance();
+    if (authInstance.isSignedIn.get()) {
+      // Already signed in, enable the upload button
+      document.getElementById('uploadButton').onclick = handleUpload;
+    } else {
+      // Not signed in, ask only once
+      document.getElementById('uploadButton').onclick = async () => {
+        try {
+          await authInstance.signIn({ scope: SCOPES });
+          handleUpload();
+        } catch (e) {
+          alert("Login failed. Please allow access.");
+        }
+      };
+    }
   });
 }
+
 
 // Authenticate user
 function authenticate() {
