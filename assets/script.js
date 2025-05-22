@@ -82,28 +82,52 @@ function handleUpload() {
 }
 
 
-// Upload file to Drive and make public
 async function uploadAndShare(file) {
   const token = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+
   const metadata = new Blob([JSON.stringify({ name: file.name })], { type: 'application/json' });
   const form = new FormData();
   form.append('metadata', metadata);
   form.append('file', file);
 
-  const uploadRes = await fetch(
+  const res = await fetch(
     'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
-    { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form }
-  );
-  const { id } = await uploadRes.json();
-
-  await fetch(
-    `https://www.googleapis.com/drive/v3/files/${id}/permissions`,
-    { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token
+      },
+      body: form
     }
   );
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('Upload error:', err);
+    throw new Error('Upload failed');
+  }
+
+  const { id } = await res.json();
+
+  // Set file to public
+  await fetch(
+    `https://www.googleapis.com/drive/v3/files/${id}/permissions`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        role: 'reader',
+        type: 'anyone'
+      })
+    }
+  );
+
   return id;
 }
+
 
 
 // Handle view card page
