@@ -37,48 +37,80 @@ function enableUpload() {
   document.getElementById('uploadButton').onclick = handleUpload;
 }
 
-function handleUpload() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*,video/*';
+async function handleUpload() {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*,video/*';
 
-  input.onchange = async () => {
-    const file = input.files[0];
+  fileInput.onchange = async () => {
+    const file = fileInput.files[0];
     if (!file) return;
 
-    try {
-      const token = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-      const metadata = new Blob([JSON.stringify({ name: file.name })], { type: 'application/json' });
-      const form = new FormData();
-      form.append('metadata', metadata);
-      form.append('file', file);
+    const authInstance = gapi.auth2.getAuthInstance();
+    if (!authInstance || !authInstance.isSignedIn.get()) {
+      alert("You're not signed in.");
+      return;
+    }
 
+    const token = authInstance.currentUser.get().getAuthResponse().access_token;
+
+    const metadata = new Blob([JSON.stringify({ name: file.name })], { type: 'application/json' });
+    const form = new FormData();
+    form.append('metadata', metadata);
+    form.append('file', file);
+
+    try {
       const uploadRes = await fetch(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
-        { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form }
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: form
+        }
       );
-      const { id } = await uploadRes.json();
 
-      await fetch(
+      if (!uploadRes.ok) {
+        const err = await uploadRes.text();
+        console.error("Upload error:", err);
+        alert("Upload failed: " + err);
+        return;
+      }
+
+      const { id } = await uploadRes.json();
+      if (!id) throw new Error("Missing file ID.");
+
+      const permRes = await fetch(
         `https://www.googleapis.com/drive/v3/files/${id}/permissions`,
         {
           method: 'POST',
           headers: {
-            'Authorization': 'Bearer ' + token,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ role: 'reader', type: 'anyone' })
+          body: JSON.stringify({
+            role: 'reader',
+            type: 'anyone'
+          })
         }
       );
 
-      window.location = `/c/${id}`;
+      if (!permRes.ok) {
+        const err = await permRes.text();
+        console.error("Permission error:", err);
+        alert("Permission failed: " + err);
+        return;
+      }
+
+      window.location.href = `/c/${id}`;
     } catch (e) {
+      console.error("Upload flow failed:", e);
       alert("Upload failed. Please try again.");
-      console.error(e);
     }
   };
 
-  input.click();
+  fileInput.click();
 }
 
 
